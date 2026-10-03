@@ -11,7 +11,7 @@ load_dotenv()
 client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 def analyze_text(text: str, max_retries: int = 3) -> dict:
-    prompt = f"""次の分sy方を分析し、必ず以下のJSON形式のみで出力してください。他の文章 (前置きや説明) は一切含めないでください。
+    prompt = f"""次の文章を分析し、必ず以下のJSON形式のみで出力してください。他の文章 (前置きや説明) は一切含めないでください。
 
 {{
   "summary": "2〜3文程度の要約",
@@ -32,7 +32,7 @@ def analyze_text(text: str, max_retries: int = 3) -> dict:
             break
         except RateLimitError:
             wait = 2 ** attempt
-            print(f"[warn] レート制限。{wait}秒待機 ({attempt}/{max_retries}) ", fike=sys.stderr)
+            print(f"[warn] レート制限。{wait}秒待機 ({attempt}/{max_retries}) ", file=sys.stderr)
             time.sleep(wait)
         except APIConnectionError:
             time.sleep(2)
@@ -46,7 +46,7 @@ def analyze_text(text: str, max_retries: int = 3) -> dict:
     try:
         return json.loads(raw_output)
     except json.JSONDecodeError:
-        start = raw_output.find("{{")
+        start = raw_output.find("{")
         end = raw_output.rfind("}") + 1
         try:
             return json.loads(raw_output[start:end])

@@ -1,0 +1,18 @@
+# APIキー
+.env
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# RAGのベクトルDB（実行時に自動生成）
+chroma_db/
+
+# 実行結果
+result.csv
+result.json
+
+# macOS
+.DS_Store

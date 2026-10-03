@@ -1,2 +1,2 @@
-anrhropic
+anthropic
 python-dotenv
