@@ -7,12 +7,14 @@ Python × Claude/OpenAI APIを使った業務効率化ツールのポートフ�
 - 生成AIを使ったテキスト分析（要約・感情分析・キーワード抽出）
 - CSV等の大量データに対する一括AI処理バッチツール
 - 社内ドキュメント・FAQに基づいて回答するRAGチャットボット構築
+- 請求書などの書類（PDF・スキャン画像）をAIで読み取り、データ化する業務ツール（画面付き）
 
 ## 使用技術
 - Python
 - Anthropic API (Claude) / OpenAI API
 - LlamaIndex（RAG構築）
 - Chroma（ベクトルDB）
+- Streamlit（業務ツールの画面）
 
 ## プロジェクト一覧
 
@@ -27,6 +29,12 @@ CSVで複数件のテキストを読み込み、一括でAI分析。結果をCSV
 ### 3. [rag_chatbot](./rag_chatbot) — RAGチャットボット
 社内文書・FAQをもとに質問に回答するチャットボット。
 Chromaでベクトルを永続化し、2回目以降は高速起動。
+
+### 4. [invoice_extractor](./invoice_extractor) — 請求書AI読み取りツール
+請求書のPDF・スキャン画像からAIが項目を読み取り、金額の整合性を自動チェック。
+画面で確認・修正してCSVに出力。インボイス制度（税率ごとの消費税）に対応。
+
+![請求書AI読み取りツール](invoice_extractor/docs/screenshot_warning.png)
 
 ## お問い合わせ
 実務での業務自動化・生成AI導入のご相談はお気軽にどうぞ。
