@@ -2,3 +2,5 @@ anthropic
 pydantic
 python-dotenv
 reportlab
+streamlit
+pandas

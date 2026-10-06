@@ -1,5 +1,4 @@
 import sys
-import csv
 import json
 import argparse
 from pathlib import Path
@@ -7,6 +6,7 @@ from pathlib import Path
 from anthropic import APIError
 from extractor import extract_invoice, ExtractionError, MEDIA_TYPES
 from validator import validate
+from exporter import INVOICE_FIELDS, invoice_rows, to_csv_bytes
 
 
 def collect_files(inputs: list[str]) -> list[Path]:
@@ -52,21 +52,9 @@ def write_output(results: list[dict], output_path: str):
             json.dump(results, f, ensure_ascii=False, indent=2)
         return
 
-    # CSVは1請求書1行（明細はJSON文字列で1列にまとめる）。Excelで文字化けしないようBOM付きで出力
-    fieldnames = ["file", "status", "warnings", "issuer_name", "issuer_registration_number", "recipient_name",
-                  "invoice_number", "issue_date", "due_date", "subtotal", "tax_amount", "total_amount",
-                  "bank_account", "line_items", "error"]
-    with open(output_path, "w", encoding="utf-8-sig", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        for r in results:
-            row = {"file": r["file"], "status": r["status"], "error": r.get("error", "")}
-            if "invoice" in r:
-                inv = r["invoice"]
-                row.update({k: v for k, v in inv.items() if k != "line_items"})
-                row["line_items"] = json.dumps(inv["line_items"], ensure_ascii=False)
-                row["warnings"] = " / ".join(r["warnings"])
-            writer.writerow(row)
+    # CSVは1請求書1行（明細はJSON文字列で1列にまとめる）
+    with open(output_path, "wb") as f:
+        f.write(to_csv_bytes(invoice_rows(results), INVOICE_FIELDS))
 
 
 def main():

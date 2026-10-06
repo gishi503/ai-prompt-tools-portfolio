@@ -31,27 +31,31 @@ class ExtractionError(Exception):
     pass
 
 
-def _file_block(path: Path) -> dict:
-    media_type = MEDIA_TYPES.get(path.suffix.lower())
+def _file_block(data: bytes, suffix: str) -> dict:
+    media_type = MEDIA_TYPES.get(suffix.lower())
     if media_type is None:
-        raise ExtractionError(f"対応していないファイル形式です: {path.suffix}（PDF / PNG / JPEG / WebP に対応）")
+        raise ExtractionError(f"対応していないファイル形式です: {suffix}（PDF / PNG / JPEG / WebP に対応）")
 
-    data = base64.standard_b64encode(path.read_bytes()).decode("utf-8")
+    encoded = base64.standard_b64encode(data).decode("utf-8")
     block_type = "document" if media_type == "application/pdf" else "image"
-    return {"type": block_type, "source": {"type": "base64", "media_type": media_type, "data": data}}
+    return {"type": block_type, "source": {"type": "base64", "media_type": media_type, "data": encoded}}
 
 
 def extract_invoice(path: str | Path) -> tuple[Invoice, dict]:
     """請求書ファイル1件を読み取り、(Invoice, トークン使用量) を返す。失敗したら ExtractionError を投げる。"""
     path = Path(path)
+    return extract_invoice_bytes(path.read_bytes(), path.suffix)
 
+
+def extract_invoice_bytes(data: bytes, suffix: str) -> tuple[Invoice, dict]:
+    """ファイルの中身（bytes）と拡張子から読み取る。画面からアップロードされたファイル用。"""
     response = client.messages.parse(
         model=MODEL,
         max_tokens=16000,
         output_config={"effort": "medium"},
         messages=[{
             "role": "user",
-            "content": [_file_block(path), {"type": "text", "text": PROMPT}],
+            "content": [_file_block(data, suffix), {"type": "text", "text": PROMPT}],
         }],
         output_format=Invoice,
         # 安全上の理由で断られた場合に、サーバー側で別モデルに自動で切り替える
