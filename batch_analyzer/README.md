@@ -37,3 +37,32 @@ pip install -r requirements.txt
 .env に以下を設定：
 
 ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxx
+---
+
+## アンケート・口コミの分類レポート（survey_report.py）
+
+自由記述を、指定した分類項目に振り分け、件数・割合・グラフ・代表的な声をまとめたExcelを作る。上の batch_analyzer の「1件の失敗で止めない」仕組みを、分類と集計に広げたもの。
+
+### できること
+- **分類案づくり（おまかせ）**：回答の一部（既定60件）を読ませて分類項目の案を作る → 確認・修正してから全件に使う
+- **指定した分類への振り分け**：分類名を選択肢として渡す構造化出力（Pydantic＋`Literal`）なので、指定外の分類名は返ってこない。当てはまらない回答は「その他」
+- **感情・ひと言要約**：回答ごとに 良い／悪い／どちらでもない と30文字以内の要約
+- **Excel出力**：集計（件数・割合・横棒グラフ・分類×感情）、クロス集計（例：分類×年代）、一覧（フィルター付き）、代表的な声（分類ごとに3件）
+- **抜き取り確認**：分類できた回答から1割（最低10件）をランダムに選んだ別ファイルを出す。納品前に人が読んで、分類のずれを確かめる
+- **CSV（UTF-8 / Shift_JIS）とExcelの入力**に対応
+
+### 実行例
+```bash
+python make_sample_survey.py   # 架空のカフェのアンケート100件を samples/ に作る
+python survey_report.py suggest samples/cafe_survey.csv -c 回答 --purpose "店舗の改善点を知りたい" -o categories.json
+python survey_report.py classify samples/cafe_survey.csv -c 回答 --categories categories.json --group-by 年代 -o report.xlsx
+```
+分類はカンマ区切りでも指定できる：`--categories "接客,味・メニュー,価格,待ち時間"`。`--basic` を付けると分類と集計だけを出す。
+
+見本の結果：`samples/cafe_survey_report.xlsx`（分類案は `samples/cafe_categories.json`）
+
+### 工夫した点
+- **20件ずつまとめて送る**：短い回答を1件ずつ送るより、リクエスト数と料金を抑えられる。100件で入力約1.7万・出力約0.5万トークン（Claude Opus 5.5、effort: low）
+- **返ってこなかった回答だけ1件ずつ送り直す**：まとめて送った結果に抜けがあっても、全体をやり直さない
+- **抜き取り確認は納品ファイルと分ける**：確認用のシートを消し忘れてお客様に渡す、ということが起きない
+- 架空の100件（答えが分かっているデータ）で試し、空欄1件を除く99件すべてが想定どおりの分類になった
