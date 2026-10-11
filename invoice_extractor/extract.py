@@ -7,6 +7,7 @@ from anthropic import APIError
 from extractor import extract_invoice, ExtractionError, MEDIA_TYPES
 from validator import validate
 from exporter import INVOICE_FIELDS, invoice_rows, to_csv_bytes
+from sheets import SHEETS_ERRORS, open_spreadsheet, register
 
 
 def collect_files(inputs: list[str]) -> list[Path]:
@@ -61,6 +62,8 @@ def main():
     parser = argparse.ArgumentParser(description="請求書（PDF/画像）から項目を抜き出し、金額の整合性をチェックするツール")
     parser.add_argument("inputs", nargs="+", help="請求書ファイル、またはファイルが入ったフォルダ")
     parser.add_argument("-o", "--output", default="result.csv", help="出力ファイル（.csv または .json）")
+    parser.add_argument("--sheet", metavar="URL", help="GoogleスプレッドシートのURL。指定すると「請求書」「明細」シートにも登録する")
+    parser.add_argument("--include-warnings", action="store_true", help="要確認の請求書もスプレッドシートに登録する")
     args = parser.parse_args()
 
     files = collect_files(args.inputs)
@@ -77,6 +80,19 @@ def main():
         f"し、{args.output} に出力しました。",
         file=sys.stderr,
     )
+
+    if args.sheet:
+        try:
+            report = register(open_spreadsheet(args.sheet), results, args.include_warnings)
+        except SHEETS_ERRORS as e:
+            print(f"[error] スプレッドシートに登録できませんでした: {e}", file=sys.stderr)
+            sys.exit(1)
+        print(
+            f"[done] スプレッドシートに{len(report['added'])}件を登録しました"
+            f"（登録済み{len(report['duplicates'])} / 要確認で保留{len(report['skipped_warnings'])}"
+            f" / 失敗{len(report['skipped_errors'])}）",
+            file=sys.stderr,
+        )
 
 
 if __name__ == "__main__":

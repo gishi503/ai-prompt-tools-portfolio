@@ -16,3 +16,6 @@ result.json
 
 # macOS
 .DS_Store
+
+# Googleサービスアカウントの鍵
+service_account*.json

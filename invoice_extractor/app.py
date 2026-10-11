@@ -1,3 +1,4 @@
+import os
 import hashlib
 from pathlib import Path
 
@@ -10,6 +11,7 @@ from extractor import extract_invoice_bytes, ExtractionError, MEDIA_TYPES
 from schema import Invoice
 from validator import validate
 from exporter import INVOICE_FIELDS, LINE_ITEM_FIELDS, invoice_rows, line_item_rows, to_csv_bytes
+from sheets import SHEETS_ERRORS, credentials_file, service_account_email, open_spreadsheet, register
 
 st.set_page_config(page_title="請求書AI読み取り", page_icon="🧾", layout="wide")
 
@@ -188,3 +190,30 @@ with summary.container():
     )
     if counts["warning"]:
         st.caption("⚠️ 要確認の請求書があります。下の内容を確認・修正すると、CSVにも修正が反映されます。")
+
+    with st.expander("Googleスプレッドシートに登録"):
+        if not credentials_file():
+            st.info(
+                "スプレッドシートに登録するには、.env の GOOGLE_SERVICE_ACCOUNT_FILE に"
+                "サービスアカウントの鍵（JSON）のパスを設定してください。手順は README を参照してください。"
+            )
+        else:
+            st.caption(f"スプレッドシートの共有設定で、{service_account_email() or 'サービスアカウントのメールアドレス'} を「編集者」に追加しておいてください。")
+            sheet_url = st.text_input("スプレッドシートのURL", value=os.getenv("SPREADSHEET_URL", ""))
+            include_warnings = st.checkbox("⚠️ 要確認の請求書も登録する", value=False)
+            st.caption("「請求書」「明細」シートに追記します（なければ作ります）。登録済みの請求書は二重に登録しません。")
+            if st.button("スプレッドシートに登録", disabled=not sheet_url):
+                try:
+                    with st.spinner("登録しています…"):
+                        report = register(open_spreadsheet(sheet_url), results, include_warnings)
+                except SHEETS_ERRORS as e:
+                    st.error(f"登録できませんでした：{e}")
+                else:
+                    st.success(f"{len(report['added'])}件を登録しました。")
+                    for label, files in [
+                        ("登録済みのため飛ばしました", report["duplicates"]),
+                        ("要確認のため飛ばしました", report["skipped_warnings"]),
+                        ("読み取りに失敗したため飛ばしました", report["skipped_errors"]),
+                    ]:
+                        if files:
+                            st.caption(f"{label}（{len(files)}件）：" + "、".join(files))
