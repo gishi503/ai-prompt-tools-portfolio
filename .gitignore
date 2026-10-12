@@ -12,6 +12,7 @@ chroma_db/
 
 # 実行結果
 result.csv
+result_明細.csv
 result.json
 
 # macOS

@@ -1,5 +1,6 @@
 import math
 from collections import defaultdict
+from datetime import date
 
 from schema import Invoice
 
@@ -7,6 +8,17 @@ from schema import Invoice
 def validate(invoice: Invoice) -> list[str]:
     """金額の整合性をルールで確かめ、問題があれば警告メッセージのリストを返す（問題なしなら空リスト）。"""
     warnings = []
+
+    # 読み取れなかった必須の項目（一部だけ読めた書類や、手で直したときの入れ忘れ）
+    if not invoice.issuer_name.strip():
+        warnings.append("請求元が空です")
+    if not invoice.line_items:
+        warnings.append("明細が1行もありません")
+    for label, value in (("請求日", invoice.issue_date), ("支払期限", invoice.due_date)):
+        if value and not _is_date(value):
+            warnings.append(f"{label}「{value}」が YYYY-MM-DD の形式ではありません")
+    if not invoice.issue_date:
+        warnings.append("請求日が空です")
 
     for i, item in enumerate(invoice.line_items, start=1):
         expected = round(item.quantity * item.unit_price)
@@ -34,7 +46,22 @@ def validate(invoice: Invoice) -> list[str]:
             f"小計＋消費税={invoice.subtotal + invoice.tax_amount:,}円ですが、請求金額は{invoice.total_amount:,}円です"
         )
 
-    if invoice.due_date and invoice.due_date < invoice.issue_date:
+    if _is_date(invoice.issue_date) and invoice.due_date and _is_date(invoice.due_date) and invoice.due_date < invoice.issue_date:
         warnings.append(f"支払期限（{invoice.due_date}）が請求日（{invoice.issue_date}）より前です")
 
     return warnings
+
+
+def _is_date(value: str) -> bool:
+    try:
+        date.fromisoformat(value)
+        return len(value) == 10  # 2026-10-01 の形だけを認める（20261001 などは通さない）
+    except ValueError:
+        return False
+
+
+def duplicate_key(issuer_name, invoice_number, issue_date, total_amount) -> tuple:
+    """同じ請求書かどうかの判定キー。請求書番号があれば「請求元＋番号」、なければ「請求元＋請求日＋金額」。"""
+    if invoice_number:
+        return (str(issuer_name), str(invoice_number))
+    return (str(issuer_name), str(issue_date), str(total_amount))

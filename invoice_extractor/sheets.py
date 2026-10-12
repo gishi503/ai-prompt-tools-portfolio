@@ -8,6 +8,8 @@ import requests
 from dotenv import load_dotenv
 from google.auth.exceptions import GoogleAuthError
 
+from validator import duplicate_key
+
 load_dotenv()
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
@@ -108,13 +110,6 @@ def get_worksheet(spreadsheet, title: str, columns: list[tuple[str, str]]):
     return ws
 
 
-def duplicate_key(issuer_name, invoice_number, issue_date, total_amount) -> tuple:
-    """同じ請求書かどうかの判定キー。請求書番号があれば「請求元＋番号」、なければ「請求元＋請求日＋金額」。"""
-    if invoice_number:
-        return (str(issuer_name), str(invoice_number))
-    return (str(issuer_name), str(issue_date), str(total_amount))
-
-
 def registered_keys(ws) -> set[tuple]:
     # 表示形式（「48,400」など）に左右されないよう、書式なしの値で読む
     rows = ws.get_all_values(value_render_option="UNFORMATTED_VALUE")
@@ -148,7 +143,7 @@ def register(spreadsheet, results: list[dict], include_warnings: bool = False) -
     report = {"added": [], "duplicates": [], "skipped_warnings": [], "skipped_errors": []}
     invoice_values, line_item_values = [], []
     for r in results:
-        if r["status"] == "error":
+        if r["status"] not in ("ok", "warning"):  # 失敗・重複ファイルなど、読み取れていないもの
             report["skipped_errors"].append(r["file"])
             continue
         if r["status"] == "warning" and not include_warnings:

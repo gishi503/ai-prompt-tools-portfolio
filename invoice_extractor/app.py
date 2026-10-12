@@ -4,10 +4,10 @@ from pathlib import Path
 
 import pandas as pd
 import streamlit as st
-from anthropic import APIError
 from pydantic import ValidationError
 
-from extractor import extract_invoice_bytes, ExtractionError, MEDIA_TYPES
+from batch import mark_duplicates, process
+from extractor import MEDIA_TYPES
 from schema import Invoice
 from validator import validate
 from exporter import INVOICE_FIELDS, LINE_ITEM_FIELDS, invoice_rows, line_item_rows, to_csv_bytes
@@ -16,7 +16,7 @@ from sheets import SHEETS_ERRORS, credentials_file, service_account_email, open_
 st.set_page_config(page_title="請求書AI読み取り", page_icon="🧾", layout="wide")
 
 SAMPLES_DIR = Path(__file__).parent / "samples"
-STATUS_LABEL = {"ok": "✅ 問題なし", "warning": "⚠️ 要確認", "error": "❌ 読み取り失敗"}
+STATUS_LABEL = {"ok": "✅ 問題なし", "warning": "⚠️ 要確認", "error": "❌ 読み取り失敗", "skipped": "⏭ 読み取りなし"}
 
 # 項目名, 表示名, 必須かどうか
 TEXT_FIELDS = [
@@ -119,18 +119,32 @@ if use_samples:
 keys = [file_key(name, data) for name, data in inputs]
 
 pending = [(k, name, data) for k, (name, data) in zip(keys, inputs) if k not in st.session_state.extracted]
-if st.button(f"読み取る（{len(pending)}件）", type="primary", disabled=not pending):
-    progress = st.progress(0.0)
-    for i, (k, name, data) in enumerate(pending, start=1):
-        with st.spinner(f"{name} を読み取っています…"):
-            try:
-                invoice, usage = extract_invoice_bytes(data, Path(name).suffix)
-                st.session_state.extracted[k] = {"file": name, "invoice": invoice.model_dump(), "usage": usage}
-            except (ExtractionError, APIError) as e:
-                # 1件失敗しても残りは処理を続ける
-                st.session_state.extracted[k] = {"file": name, "error": str(e)}
-        progress.progress(i / len(pending))
+failed = [k for k in keys if "error" in st.session_state.extracted.get(k, {})]
+
+col_read, col_retry = st.columns([1, 1])
+if col_read.button(f"読み取る（{len(pending)}件）", type="primary", disabled=not pending, width="stretch"):
+    progress = st.progress(0.0, text="読み取りを始めます…")
+    results_new, fatal = process(
+        [(name, data) for _, name, data in pending],
+        on_done=lambda n, total, name: progress.progress(n / total, text=f"{n}/{total} 件完了（{name}）"),
+    )
+    for (k, _, _), r in zip(pending, results_new):
+        if r["status"] == "skipped":
+            st.session_state.extracted[k] = {"file": r["file"], "skipped": r["error"]}
+        elif "invoice" in r:
+            st.session_state.extracted[k] = {"file": r["file"], "invoice": r["invoice"], "usage": r["usage"]}
+        else:  # 1件失敗しても残りは処理を続ける（失敗した理由は残しておき、あとで読み取り直せる）
+            st.session_state.extracted[k] = {"file": r["file"], "error": r["error"]}
+    st.session_state.fatal = fatal
     st.rerun()  # ボタンの件数表示を更新するため、読み取りが終わったら画面を描き直す
+if col_retry.button(f"失敗したファイルを読み取り直す（{len(failed)}件）", disabled=not failed, width="stretch"):
+    for k in failed:
+        del st.session_state.extracted[k]
+    st.session_state.fatal = None
+    st.rerun()
+
+if st.session_state.get("fatal"):
+    st.error(f"読み取りを途中で止めました：{st.session_state.fatal}　原因を直してから「失敗したファイルを読み取り直す」を押してください。")
 
 done = [(k, st.session_state.extracted[k]) for k in keys if k in st.session_state.extracted]
 if not done:
@@ -141,29 +155,36 @@ st.divider()
 summary = st.empty()  # 全件の確認が終わってから集計を表示する
 results = []
 
+shown = []  # (見出し, 注意書きの場所, 結果)。重複チェックの後で見出しと警告を書く
 for k, item in done:
     with st.container(border=True):
         heading = st.empty()
         notes = st.container()
 
-        if "error" in item:
-            heading.subheader(f"{STATUS_LABEL['error']}　{item['file']}")
-            notes.error(item["error"])
-            results.append({"file": item["file"], "status": "error", "error": item["error"]})
-            continue
-
-        invoice, warnings = edit_invoice(k, item["invoice"])
-        status = "warning" if warnings else "ok"
-        heading.subheader(f"{STATUS_LABEL[status]}　{item['file']}")
-        for w in warnings:
-            notes.warning(w)
-        usage = item["usage"]
-        notes.caption(f"トークン使用量：入力 {usage['input_tokens']:,} / 出力 {usage['output_tokens']:,}")
-
-        if invoice is None:
-            results.append({"file": item["file"], "status": "error", "error": warnings[0]})
+        if "error" in item or "skipped" in item:
+            status = "error" if "error" in item else "skipped"
+            message = item.get("error") or item["skipped"]
+            (notes.error if status == "error" else notes.info)(message)
+            result = {"file": item["file"], "status": status, "error": message}
         else:
-            results.append({"file": item["file"], "status": status, "warnings": warnings, "invoice": invoice})
+            invoice, warnings = edit_invoice(k, item["invoice"])
+            for w in warnings:
+                notes.warning(w)
+            usage = item["usage"]
+            notes.caption(f"トークン使用量：入力 {usage['input_tokens']:,} / 出力 {usage['output_tokens']:,}")
+            if invoice is None:
+                result = {"file": item["file"], "status": "error", "error": warnings[0]}
+            else:
+                result = {"file": item["file"], "status": "", "warnings": list(warnings), "invoice": invoice}
+        results.append(result)
+        shown.append((heading, notes, result, len(result.get("warnings", []))))
+
+# 修正後の内容で、同じ請求書が複数ないかを確かめる（見つかれば「要確認」にする）
+mark_duplicates(results)
+for heading, notes, result, before in shown:
+    heading.subheader(f"{STATUS_LABEL[result['status']]}　{result['file']}")
+    for w in result.get("warnings", [])[before:]:
+        notes.warning(w)
 
 with summary.container():
     counts = {s: sum(r["status"] == s for r in results) for s in STATUS_LABEL}
@@ -171,7 +192,7 @@ with summary.container():
     cols[0].metric("読み取り件数", len(results))
     cols[1].metric("問題なし", counts["ok"])
     cols[2].metric("要確認", counts["warning"])
-    cols[3].metric("失敗", counts["error"])
+    cols[3].metric("失敗", counts["error"] + counts["skipped"])
 
     dl1, dl2 = st.columns(2)
     dl1.download_button(
