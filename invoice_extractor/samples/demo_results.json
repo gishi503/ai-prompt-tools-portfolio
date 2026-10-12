@@ -1,0 +1,114 @@
+{
+  "b5e44e0c56e1c23247bdcad226eb599bbecd4d570efc2b8958ee6681a18a2cba": {
+    "file": "invoice_01_web.pdf",
+    "invoice": {
+      "issuer_name": "株式会社サンプルデザイン",
+      "issuer_registration_number": "T1234567890123",
+      "recipient_name": "架空商事株式会社",
+      "invoice_number": "INV-2026-0101",
+      "issue_date": "2026-09-30",
+      "due_date": "2026-10-31",
+      "line_items": [
+        {
+          "description": "Webサイト改修（トップページ）",
+          "quantity": 1.0,
+          "unit_price": 150000,
+          "amount": 150000,
+          "tax_rate": 10
+        },
+        {
+          "description": "保守サポート（9月分）",
+          "quantity": 1.0,
+          "unit_price": 30000,
+          "amount": 30000,
+          "tax_rate": 10
+        }
+      ],
+      "subtotal": 180000,
+      "tax_amount": 18000,
+      "total_amount": 198000,
+      "bank_account": "架空銀行 本店営業部 普通 1234567 カ）サンプルデザイン"
+    },
+    "usage": {
+      "input_tokens": 4378,
+      "output_tokens": 268
+    }
+  },
+  "7b14d9b40dc7e44c73dd3bf0653528c3ad6fef0c371a81c83ff52338fecf3200": {
+    "file": "invoice_02_mixed_tax.pdf",
+    "invoice": {
+      "issuer_name": "ダミー食品株式会社",
+      "issuer_registration_number": "T9876543210987",
+      "recipient_name": "架空商事株式会社",
+      "invoice_number": "No.20261002-07",
+      "issue_date": "2026-10-02",
+      "due_date": "2026-11-30",
+      "line_items": [
+        {
+          "description": "会議用弁当",
+          "quantity": 25.0,
+          "unit_price": 980,
+          "amount": 24500,
+          "tax_rate": 8
+        },
+        {
+          "description": "お茶（500ml）",
+          "quantity": 25.0,
+          "unit_price": 150,
+          "amount": 3750,
+          "tax_rate": 8
+        },
+        {
+          "description": "配送料",
+          "quantity": 1.0,
+          "unit_price": 3000,
+          "amount": 3000,
+          "tax_rate": 10
+        }
+      ],
+      "subtotal": 31250,
+      "tax_amount": 2560,
+      "total_amount": 33810,
+      "bank_account": "テスト信用金庫 中央支店 当座 7654321 ダミー食品（カ"
+    },
+    "usage": {
+      "input_tokens": 4428,
+      "output_tokens": 294
+    }
+  },
+  "60c602143920b464557be0a1f3a67dc44e12856f69427317224523f077392d56": {
+    "file": "invoice_03_total_mismatch.pdf",
+    "invoice": {
+      "issuer_name": "合同会社テストラボ",
+      "issuer_registration_number": null,
+      "recipient_name": "架空商事株式会社",
+      "invoice_number": null,
+      "issue_date": "2026-10-01",
+      "due_date": null,
+      "line_items": [
+        {
+          "description": "データ入力作業",
+          "quantity": 120.0,
+          "unit_price": 300,
+          "amount": 36000,
+          "tax_rate": 10
+        },
+        {
+          "description": "CSV整形",
+          "quantity": 1.0,
+          "unit_price": 8000,
+          "amount": 8000,
+          "tax_rate": 10
+        }
+      ],
+      "subtotal": 44000,
+      "tax_amount": 4400,
+      "total_amount": 52000,
+      "bank_account": null
+    },
+    "usage": {
+      "input_tokens": 4283,
+      "output_tokens": 275
+    }
+  }
+}

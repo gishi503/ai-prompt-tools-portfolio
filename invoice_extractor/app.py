@@ -6,6 +6,7 @@ import pandas as pd
 import streamlit as st
 from pydantic import ValidationError
 
+import demo
 from batch import mark_duplicates, process
 from extractor import MEDIA_TYPES
 from schema import Invoice
@@ -16,6 +17,7 @@ from sheets import SHEETS_ERRORS, credentials_file, service_account_email, open_
 st.set_page_config(page_title="請求書AI読み取り", page_icon="🧾", layout="wide")
 
 SAMPLES_DIR = Path(__file__).parent / "samples"
+DEMO = demo.is_demo_mode()
 STATUS_LABEL = {"ok": "✅ 問題なし", "warning": "⚠️ 要確認", "error": "❌ 読み取り失敗", "skipped": "⏭ 読み取りなし"}
 
 # 項目名, 表示名, 必須かどうか
@@ -85,12 +87,18 @@ st.caption(
     "請求書のPDF・画像をアップロードすると、AI（Claude）が項目を読み取ります。"
     "金額の整合性をチェックしたうえで、内容を確認・修正してCSVでダウンロードできます。"
 )
+if DEMO:
+    st.info(
+        "**デモ版です。** 架空のサンプル請求書3枚で、読み取り結果の確認・修正・金額チェック・CSVのダウンロードを試せます。"
+        "読み取り結果は、事前にAI（Claude）で実際に読み取ったものです（このページではAIを呼び出しません）。"
+        "3枚目の請求書は、わざと金額を間違えてあります。"
+    )
 
 with st.sidebar:
     st.header("使い方")
     st.markdown(
-        "1. 請求書をアップロード（複数可）\n"
-        "2. 「読み取る」を押す\n"
+        ("1. サンプルにチェックを入れる\n" if DEMO else "1. 請求書をアップロード（複数可）\n")
+        + "2. 「読み取る」を押す\n"
         "3. 警告が出た項目を確認・修正\n"
         "4. CSVをダウンロード"
     )
@@ -106,12 +114,12 @@ with st.sidebar:
     st.divider()
     st.caption("AIは書類の値をそのまま読み取り、計算の誤りはプログラムのチェックで見つけます。")
 
-uploaded = st.file_uploader(
+uploaded = None if DEMO else st.file_uploader(
     "請求書ファイル（PDF / PNG / JPEG / WebP）",
     type=[ext.lstrip(".") for ext in MEDIA_TYPES],
     accept_multiple_files=True,
 )
-use_samples = st.checkbox("サンプルの請求書（架空のデータ3枚）で試す")
+use_samples = st.checkbox("サンプルの請求書（架空のデータ3枚）で試す", value=DEMO)
 
 inputs = [(f.name, f.getvalue()) for f in uploaded or []]
 if use_samples:
@@ -127,6 +135,7 @@ if col_read.button(f"読み取る（{len(pending)}件）", type="primary", disab
     results_new, fatal = process(
         [(name, data) for _, name, data in pending],
         on_done=lambda n, total, name: progress.progress(n / total, text=f"{n}/{total} 件完了（{name}）"),
+        **({"extract": demo.extract} if DEMO else {}),
     )
     for (k, _, _), r in zip(pending, results_new):
         if r["status"] == "skipped":
@@ -213,7 +222,9 @@ with summary.container():
         st.caption("⚠️ 要確認の請求書があります。下の内容を確認・修正すると、CSVにも修正が反映されます。")
 
     with st.expander("Googleスプレッドシートに登録"):
-        if not credentials_file():
+        if DEMO:
+            st.info("デモ版ではスプレッドシートへの登録はできません。ご自身の環境で動かすときに使えます（README参照）。")
+        elif not credentials_file():
             st.info(
                 "スプレッドシートに登録するには、.env の GOOGLE_SERVICE_ACCOUNT_FILE に"
                 "サービスアカウントの鍵（JSON）のパスを設定してください。手順は README を参照してください。"
