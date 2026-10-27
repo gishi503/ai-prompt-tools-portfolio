@@ -1,0 +1,31 @@
+# 出品画像と同じ見た目（伝票の緑と墨、要確認は赤ペンの朱）にそろえる
+[theme]
+base = "light"
+primaryColor = "#1D5641"
+backgroundColor = "#FAFBF8"
+secondaryBackgroundColor = "#EEF3EF"
+textColor = "#1F2623"
+borderColor = "#D3E3D8"
+dataframeBorderColor = "#D3E3D8"
+dataframeHeaderBackgroundColor = "#E6F0E9"
+dataframeHeaderTextColor = "#1D5641"
+linkColor = "#1D5641"
+font = "Noto Sans JP:https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap, sans-serif"
+headingFont = "Zen Kaku Gothic New:https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700;900&display=swap, sans-serif"
+headingFontWeights = [900, 900, 700]
+metricValueFontWeight = 700
+baseRadius = "0.25rem"
+showWidgetBorder = true
+# 要確認（warning）は赤ペンの朱、読み取り失敗（error）はそれより濃い赤
+yellowColor = "#E24A33"
+yellowBackgroundColor = "#FCEDE9"
+yellowTextColor = "#C2361F"
+redColor = "#9F2A1B"
+greenColor = "#1D5641"
+greenBackgroundColor = "#E6F0E9"
+blueColor = "#1D5641"
+blueBackgroundColor = "#E6F0E9"
+blueTextColor = "#1D5641"
+
+[theme.sidebar]
+backgroundColor = "#EEF3EF"

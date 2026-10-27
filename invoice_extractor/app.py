@@ -18,7 +18,8 @@ st.set_page_config(page_title="請求書AI読み取り", page_icon="🧾", layou
 
 SAMPLES_DIR = Path(__file__).parent / "samples"
 DEMO = demo.is_demo_mode()
-STATUS_LABEL = {"ok": "✅ 問題なし", "warning": "⚠️ 要確認", "error": "❌ 読み取り失敗", "skipped": "⏭ 読み取りなし"}
+STATUS_LABEL = {"ok": "問題なし", "warning": "要確認", "error": "読み取り失敗", "skipped": "読み取りなし"}
+STATUS_COLOR = {"ok": "green", "warning": "yellow", "error": "red", "skipped": "gray"}  # 色は .streamlit/config.toml で出品画像と同じ色にしている
 
 # 項目名, 表示名, 必須かどうか
 TEXT_FIELDS = [
@@ -59,8 +60,8 @@ def edit_invoice(key: str, original: dict) -> tuple[dict | None, list[str]]:
         column_config={
             "description": st.column_config.TextColumn("品目", required=True),
             "quantity": st.column_config.NumberColumn("数量", required=True),
-            "unit_price": st.column_config.NumberColumn("単価（円）", format="%d", required=True),
-            "amount": st.column_config.NumberColumn("金額（円）", format="%d", required=True),
+            "unit_price": st.column_config.NumberColumn("単価（円）", format="localized", required=True),
+            "amount": st.column_config.NumberColumn("金額（円）", format="localized", required=True),
             "tax_rate": st.column_config.SelectboxColumn("税率（%）", options=[10, 8], required=True),
         },
     )
@@ -82,7 +83,7 @@ def edit_invoice(key: str, original: dict) -> tuple[dict | None, list[str]]:
     return invoice.model_dump(), validate(invoice)
 
 
-st.title("🧾 請求書AI読み取り")
+st.title("請求書AI読み取り")
 st.caption(
     "請求書のPDF・画像をアップロードすると、AI（Claude）が項目を読み取ります。"
     "金額の整合性をチェックしたうえで、内容を確認・修正してCSVでダウンロードできます。"
@@ -191,7 +192,8 @@ for k, item in done:
 # 修正後の内容で、同じ請求書が複数ないかを確かめる（見つかれば「要確認」にする）
 mark_duplicates(results)
 for heading, notes, result, before in shown:
-    heading.subheader(f"{STATUS_LABEL[result['status']]}　{result['file']}")
+    status = result["status"]
+    heading.markdown(f"#### :{STATUS_COLOR[status]}-badge[{STATUS_LABEL[status]}] {result['file']}")
     for w in result.get("warnings", [])[before:]:
         notes.warning(w)
 
@@ -219,7 +221,7 @@ with summary.container():
         width="stretch",
     )
     if counts["warning"]:
-        st.caption("⚠️ 要確認の請求書があります。下の内容を確認・修正すると、CSVにも修正が反映されます。")
+        st.caption("要確認の請求書があります。下の内容を確認・修正すると、CSVにも修正が反映されます。")
 
     with st.expander("Googleスプレッドシートに登録"):
         if DEMO:
@@ -232,7 +234,7 @@ with summary.container():
         else:
             st.caption(f"スプレッドシートの共有設定で、{service_account_email() or 'サービスアカウントのメールアドレス'} を「編集者」に追加しておいてください。")
             sheet_url = st.text_input("スプレッドシートのURL", value=os.getenv("SPREADSHEET_URL", ""))
-            include_warnings = st.checkbox("⚠️ 要確認の請求書も登録する", value=False)
+            include_warnings = st.checkbox("要確認の請求書も登録する", value=False)
             st.caption("「請求書」「明細」シートに追記します（なければ作ります）。登録済みの請求書は二重に登録しません。")
             if st.button("スプレッドシートに登録", disabled=not sheet_url):
                 try:
