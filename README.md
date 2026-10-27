@@ -33,6 +33,7 @@ Chromaでベクトルを永続化し、2回目以降は高速起動。
 ### 4. [invoice_extractor](./invoice_extractor) — 請求書AI読み取りツール
 請求書のPDF・スキャン画像からAIが項目を読み取り、金額の整合性を自動チェック。
 画面で確認・修正してCSVに出力。インボイス制度（税率ごとの消費税）に対応。
+**▶ デモ：https://gishi503-invoice-demo.streamlit.app/**（ブラウザでそのまま試せます）
 
 ![請求書AI読み取りツール](invoice_extractor/docs/screenshot_warning.png)
 
