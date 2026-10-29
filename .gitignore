@@ -20,3 +20,6 @@ result.json
 
 # Googleサービスアカウントの鍵
 service_account*.json
+
+# mail_triage が作ったNotionのデータベースのID
+.notion_state.json

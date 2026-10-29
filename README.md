@@ -8,6 +8,7 @@ Python × Claude/OpenAI APIを使った業務効率化ツールのポートフ�
 - CSV等の大量データに対する一括AI処理バッチツール
 - 社内ドキュメント・FAQに基づいて回答するRAGチャットボット構築
 - 請求書などの書類（PDF・スキャン画像）をAIで読み取り、データ化する業務ツール（画面付き）
+- メールをAIで要約・分類し、Notionに登録してSlackに通知する連携自動化（Notion API・Slack API）
 
 ## 使用技術
 - Python
@@ -15,6 +16,7 @@ Python × Claude/OpenAI APIを使った業務効率化ツールのポートフ�
 - LlamaIndex（RAG構築）
 - Chroma（ベクトルDB）
 - Streamlit（業務ツールの画面）
+- Notion API / Slack API（ツール間の連携）
 
 ## プロジェクト一覧
 
@@ -36,6 +38,12 @@ Chromaでベクトルを永続化し、2回目以降は高速起動。
 **▶ デモ：https://gishi503-invoice-demo.streamlit.app/**（ブラウザでそのまま試せます）
 
 ![請求書AI読み取りツール](invoice_extractor/docs/screenshot_warning.png)
+
+### 5. [mail_triage](./mail_triage) — メールのAI整理 → Notion登録 → Slack通知
+届いたメールをAIが要約し、種類・緊急度・やること・期限を整理。Notionのデータベースに1通1行で登録し、Slackに「Notionで開く」ボタン付きで通知。
+同じメールは二重に登録しない設計（何度実行しても同じ結果）。
+
+![メールのAI整理のSlack通知](mail_triage/docs/screenshot_slack.png)
 
 ## お問い合わせ
 実務での業務自動化・生成AI導入のご相談はお気軽にどうぞ。
