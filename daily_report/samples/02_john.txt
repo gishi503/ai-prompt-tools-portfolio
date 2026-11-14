@@ -1,0 +1,12 @@
+Name: John Reyes
+Role: Virtual Assistant (Manila)
+Date: 2026-11-13
+---
+Hi Sir/Ma'am,
+
+Today I replied to 18 customer emails in English and sent 3 quotation requests to Tanaka-san for checking.
+I also updated the order list in the Google Sheet (orders up to Nov 12).
+
+Question: For the customer from Singapore (ABC Trading), they are asking for a 10% discount if they order 500 pcs. I don't know if I can say yes. Please advise before Monday because they want an answer.
+
+Thank you!

@@ -1,0 +1,11 @@
+Name: Mark Villanueva
+Role: Team Leader (Cebu)
+Date: 2026-11-13
+---
+Team status is ok. Everyone attended today.
+
+- Internet was down from 2pm to 3:30pm because of the typhoon signal. Maria and Angel worked offline. No data lost.
+- Next week there might be another typhoon, PAGASA says signal no. 1 possible on Wed-Thu. If power goes out we will use the backup pocket wifi but it is slow.
+- I reviewed Maria's code for the contact form. OK to deploy.
+
+Request: Can we get the access to the client's WordPress admin for Hanaya Bakery? We only have FTP now. Kailangan namin ito para ma-check yung plugins.

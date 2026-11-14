@@ -1,0 +1,17 @@
+Name: Maria Santos
+Role: Web Developer (Cebu)
+Date: 2026-11-13
+---
+Good evening po!
+
+Done today:
+- Finished the header and footer of the Hanaya Bakery LP (PC version)
+- Fixed the contact form validation bug that Tanaka-san reported yesterday
+
+In progress:
+- Smartphone layout of the Hanaya Bakery LP, around 60% done
+
+Problem:
+The client's product photos are still not uploaded to the shared folder. I used dummy images for now. If the photos don't come by Tuesday, I think the LP will be late (deadline is Nov 20).
+
+Tomorrow: finish the smartphone layout.
